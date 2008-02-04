@@ -1,0 +1,1 @@
+Remote file copy to an absolute pathname doesn't work (eg aeke_cp localfile remote:/tmp/wherever).

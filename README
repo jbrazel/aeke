@@ -1,0 +1,89 @@
+Aeke is a light-weight, SSH-like program that uses an identity-based authentication protocol to guard against MITM attacks.
+
+Aeke consists of three distinct programs:
+
+1. aeked - the server. This is conceptually equivalent to sshd(8), but with a few important differences.
+	
+	Firstly, there is no concept of usernames. Only one password exists per host, and this password
+	must be set before running the server:
+
+		aeked -s 
+
+	You'll be prompted (twice) for a password.
+
+	Run the server in the following way:
+
+		aeked [-d] portnumber
+
+	where portnumber is in the range 1..65535.
+	Repeated invocation of '-d' increases the amount of debugging output.
+
+2. aeke - the client program, conceptually equivalent to ssh(1). This is a commandline based program used to connect to an
+          aeked server.
+
+	Usage:
+
+			aeke [-d] [-t timeout] host[:port[:port[...]]]
+
+	'-d' enables debugging. Repeated use of the '-d' option increases the amount of debugging 
+ 	output.
+
+	'-t' sets the connection timeout (or, if portknocking is enabled, the delay between each
+	knock).
+
+	At least one port number is required, as the server has no assigned port that it listens on. 
+	Upon connecting (after any port knocking), the server will prompt for a password to the 
+ 	remote server (aeke only uses passwords, not usernames).
+
+	If the environment variable AEKE_PROXY is set, aeke expects this to contain a list of intermediate
+	nodes to 'hop' through before connecting to the server specified on the command line. The format of
+	the AEKE_PROXY environment variable is:
+
+		AEKE_PROXY=hostname:[port[...]]:port[:options][;hostname:port...]
+
+	i.e. a semicolon-separated list of host:port:port:...:option tuples, where host is the 
+	hostname or IP of an intermediate host, followed by an optional port-knock list, followed by
+	the connect port, and finally, optionally, by a comma-separated list of options.
+	The only currently-defined option is the connection timeout / portknock delay value, specified
+	as 't=<number>'.
+
+	For example, to connect to final_host on port 7777, via port 1111 on host_1, port 2222 on host_2, 
+	and port 3333 onhost_3, with a secret portknock sequence {123,456,789} on host_3, and different timeouts for 
+	all hosts, we would use:
+
+		export AEKE_PROXY=host_1:1111:t=2;host_2:2222:t=1;host_3:123:456:789:3333:t=3
+		aeke final_host:7777
+
+	Note that all intermediate hosts must be running aeked. The password for each hosts will be requested
+	as the client connects.
+
+	If the client needs to burrow through a web proxy, the AEKE_WWW_PROXY and AEKE_WWW_PROXY_LOGIN 
+	environment variables can be set. The AEKE_WWW_PROXY variable takes a hostname/IP and port
+	in the form "hostname:IP" (the hostname and port of the web proxy).
+
+	If a username and password are required by the proxy, set the AEKE_WWW_PROXY_LOGIN variable to
+	"<user>:<password>".
+
+	The aeke client will then use the HTTP CONNECT protocol to connect to the first host/hop.
+
+3. aeke_cp - the copy program, similar to scp. 
+	
+	Usage:
+		aeke_cp src_file dst_file
+
+	where one of the files is a remote file with filename of the format:
+
+		host[:port[...]]:port:filename
+
+	and the other is just a local filename.
+
+	The AEKE_* environment variables can be used as with the aeke client program.
+
+
+Compiling.
+=========
+If portknocking is used by the server, edit the Makefile and uncomment the '-DPORTKNOCKING' 
+definition in CFLAGS. This will require the user to edit the source file aeked.c and add code 
+to close the server port once the last connection has closed (this will vary depending on
+how portknocking is implemented on the server).
+
