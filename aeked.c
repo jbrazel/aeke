@@ -429,6 +429,7 @@ int main(int argc, char **argv)
       switch(arg) {
       case 'd':
 	debug++;
+	show_error_messages = 1;
 	break;
       case 's':
 	setPassword++;

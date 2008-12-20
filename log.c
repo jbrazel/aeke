@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 extern int debug;
+int show_error_messages = 1;
 
 static const char *logPrefix = NULL;
 
@@ -60,12 +61,15 @@ void
 errMsg(const char *format, ...)
 {
   va_list args;
-  
-  if (logPrefix != NULL)
-    fprintf(stderr, "%s: ", logPrefix);
 
-  va_start(args, format);
-  vfprintf(stderr, format, args);
-  va_end(args);
+  if (show_error_messages) 
+    {  
+      if (logPrefix != NULL)
+        fprintf(stderr, "%s: ", logPrefix);
+
+      va_start(args, format);
+      vfprintf(stderr, format, args);
+      va_end(args);
+    }
 }
 
