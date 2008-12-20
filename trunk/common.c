@@ -334,7 +334,7 @@ wwwProxyConnected(Socket *s, int status)
       unsigned char *b;
       unsigned short port;
       char template[] = 
-	"CONNECT xxx.xxx.xxx.xxx:nnnnn HTTP/1.0\r\n"
+	"CONNECT xxx.xxx.xxx.xxx:nnnnn HTTP/1.1\r\n"
 	"Host: xxx.xxx.xxx.xxx:nnnnn\r\n"
 	"Proxy-Authorization: basic \r\n"
 	"\r\n";
@@ -359,7 +359,7 @@ wwwProxyConnected(Socket *s, int status)
 	  base64(a->u.connectData.proxyAuth, base64Passwd);
 
 	  snprintf(proxyCmd, sizeof(proxyCmd), 
-		   "CONNECT %s:%u HTTP/1.0\r\n"
+		   "CONNECT %s:%u HTTP/1.1\r\n"
 		   "Host: %s:%u\r\n"
 		   "Proxy-Authorization: basic %s\r\n"
 		   "\r\n",
@@ -379,7 +379,7 @@ wwwProxyConnected(Socket *s, int status)
            */
 	  
 	  snprintf(proxyCmd, sizeof(proxyCmd), 
-		   "CONNECT %s:%u HTTP/1.0\r\n"
+		   "CONNECT %s:%u HTTP/1.1\r\n"
 		   "Host: %s:%u\r\n"
 		   "\r\n", 
 		   inet_ntoa(a->u.connectData.ip), port,
@@ -1184,7 +1184,7 @@ connectToFile(Socket *s, const char *filename, int mode,
 
   if (tolower(mode) == 'r')
     {
-      fd = open(filename, O_RDONLY);
+      fd = open(filename, O_RDONLY | O_BINARY);
       
       if (fd < 0)
 	{
@@ -1196,7 +1196,7 @@ connectToFile(Socket *s, const char *filename, int mode,
     }
   else
     {
-      fd = open(filename, O_CREAT|O_TRUNC|O_WRONLY, 0600);
+      fd = open(filename, O_CREAT|O_TRUNC|O_WRONLY|O_BINARY, 0600);
 
       if (fd < 0)
 	{
