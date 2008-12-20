@@ -426,7 +426,6 @@ static void
 wwwProxyResponseRead(Socket *s, int status)
 {
   AekeSocket *a = (AekeSocket*)s->data;
-  int proxyStatus;
 
   if (status < 0)
     {
@@ -446,14 +445,7 @@ wwwProxyResponseRead(Socket *s, int status)
    * and the response code.
    */
 
-  proxyStatus = atoi((char*)s->transferData.readBuffer.b.buffer + 9);
-
-  if (proxyStatus / 100 != 2)
-    {
-      errMsg("Bad proxy response %i\n", proxyStatus);
-      popReturn(s, -1);
-      return;      
-    }
+  a->u.connectData.responseCode = atoi((char*)s->transferData.readBuffer.b.buffer + 9);
 
   /* Read rest of response. */
   (*a->read_routine)(s, 1, checkWwwProxyResponse);
@@ -482,8 +474,17 @@ checkWwwProxyResponse(Socket *s, int status)
 
   if (a->u.connectData.proxyEorMarker == strlen(endOfResponse))
     {
-      dbgMsg(3, "Got proxy response\n");
-      onConnected(s, status);
+      if (a->u.connectData.responseCode / 100 != 2)
+        {
+	  errMsg("Bad proxy response %i\n", a->u.connectData.responseCode);
+	  popReturn(s, -1);
+	}
+      else
+	{
+	  dbgMsg(3, "Got proxy response %i\n", a->u.connectData.responseCode);
+          onConnected(s, status);
+	}
+ 
       return;
     }
 
@@ -1184,7 +1185,11 @@ connectToFile(Socket *s, const char *filename, int mode,
 
   if (tolower(mode) == 'r')
     {
+#ifdef __linux__
+      fd = open(filename, O_RDONLY);
+#else
       fd = open(filename, O_RDONLY | O_BINARY);
+#endif
       
       if (fd < 0)
 	{
@@ -1196,7 +1201,11 @@ connectToFile(Socket *s, const char *filename, int mode,
     }
   else
     {
+#ifdef __linux__
+      fd = open(filename, O_CREAT|O_TRUNC|O_WRONLY, 0600);
+#else
       fd = open(filename, O_CREAT|O_TRUNC|O_WRONLY|O_BINARY, 0600);
+#endif
 
       if (fd < 0)
 	{
